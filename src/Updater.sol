@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "./IUpdater.sol";
+import "./IHeader.sol";
+import "./LightClient.sol";
 
 /**
  * @title Updater contract
@@ -9,17 +10,18 @@ import "./IUpdater.sol";
  */
 contract Updater {
 
-
     address relayer;
+    LightClient lightClient;
     address owner;
     uint public lastHeight;
-    mapping(uint => IUpdater.BlockHeader) public verifiedHeaders;
+    mapping(uint => IHeader.BlockHeader) public verifiedHeaders;
 
-    constructor(address relayerAddress, IUpdater.BlockHeader memory genesis) public {
-        relayer = relayerAddress;
+    constructor(address _relayer, address _lightClient, IHeader.BlockHeader memory _genesis) public {
+        relayer = _relayer;
         owner = msg.sender;
-        verifiedHeaders[genesis.height] = genesis;
+        verifiedHeaders[_genesis.height] = _genesis;
         lastHeight = 0;
+        lightClient = LightClient(_lightClient);
     }
 
     /**
@@ -36,30 +38,21 @@ contract Updater {
     @param blkHr the block header to append
     @param blkHrmin the parent block header
     */
-    function headerUpdate(bytes memory proof, IUpdater.BlockHeader memory blkHr, IUpdater.BlockHeader memory blkHrmin) public onlyRelayer {
+    function headerUpdate(bytes memory proof, IHeader.BlockHeader memory blkHr, IHeader.BlockHeader memory blkHrmin) public onlyRelayer {
         require(verifiedHeaders[blkHrmin.height].height == blkHrmin.height, "no block header parent known");
         require(verifiedHeaders[blkHr.height].height == blkHr.height, "a header with this height already exists");
         compareBlkHrs(blkHrmin, verifiedHeaders[blkHrmin.height]);
-        bool result = verifyProof(proof);
+        bool result = lightClient.verifyProof(proof);
         require(result, "Proof cannot be verified");
         verifiedHeaders[blkHr.height] = blkHr;
         lastHeight = blkHr.height;
     }
 
     /**
-    @notice verify the given proof
-    @dev mock verifier
-    @param proof for the block header to be verified
-    */
-    function verifyProof(bytes memory proof) internal returns (bool){
-        return true;
-    }
-
-    /**
     @dev compare two block headers
     @dev TODO more efficient/elegant way to compare structs in solidity
     */
-    function compareBlkHrs(IUpdater.BlockHeader memory blk1, IUpdater.BlockHeader memory blk2) internal returns (bool){
+    function compareBlkHrs(IHeader.BlockHeader memory blk1, IHeader.BlockHeader memory blk2) internal returns (bool){
         require(keccak256(abi.encodePacked(blk1.validators)) == keccak256(abi.encodePacked(blk2.validators)), "validators");
         require(blk1.height == blk2.height, "validators");
         // keccak256(abi.encodePacked(blk1.height, keccak256(blk1.validators));
@@ -69,7 +62,7 @@ contract Updater {
     @notice Get header from the verified headers list
     @param t height of the header to look for
     */
-    function getHeader(uint t) public returns (IUpdater.BlockHeader memory){
+    function getHeader(uint t) public returns (IHeader.BlockHeader memory){
         require(verifiedHeaders[t].height == t, "no header verifier for this height, wait a bit");
         return verifiedHeaders[t];
     }

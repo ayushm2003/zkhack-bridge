@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-contract IUpdater {
+contract IHeader {
     struct BlockHeader {
         uint height;
         address [] validators;
