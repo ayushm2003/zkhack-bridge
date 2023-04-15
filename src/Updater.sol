@@ -40,7 +40,7 @@ contract Updater {
     */
     function headerUpdate(bytes memory proof, IHeader.BlockHeader memory blkHr, IHeader.BlockHeader memory blkHrmin) public onlyRelayer {
         require(verifiedHeaders[blkHrmin.height].height == blkHrmin.height, "no block header parent known");
-        require(verifiedHeaders[blkHr.height].height == blkHr.height, "a header with this height already exists");
+        //require(verifiedHeaders[blkHr.height].exists , "a header with this height already exists");
         compareBlkHrs(blkHrmin, verifiedHeaders[blkHrmin.height]);
         bool result = lightClient.verifyProof(proof);
         require(result, "Proof cannot be verified");

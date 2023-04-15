@@ -10,19 +10,20 @@ contract UpdaterTest is Test {
     Updater public updater;
     mapping(uint => IHeader.BlockHeader) internal headers;
     LightClient lightClient;
+    address[]  validators;
+
     function setUp() public {
-        address[] memory validators = new address[](1);
+        validators = new address[](1);
         validators[0] = address(this);
         IHeader.BlockHeader memory header = IHeader.BlockHeader({height : 0, validators : validators});
         headers[0] = header;
         lightClient = new LightClient();
-        updater = new Updater(address(this),address(lightClient), header);
+        updater = new Updater(address(this), address(lightClient), header);
     }
 
     function testUpdateHeader() public {
         assertEq(updater.lastHeight(), 0);
-        address[] memory validators = new address[](1);
-        validators[0] = address(this);
+        emit log("here");
         IHeader.BlockHeader memory header = IHeader.BlockHeader({height : 1, validators : validators});
         updater.headerUpdate("null", header, headers[0]);
         assertEq(updater.lastHeight(), 1);
